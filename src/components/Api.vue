@@ -1,15 +1,20 @@
 <template>
 <div class="api">
     <h3>API base URL</h3>
-    <input type="text" v-model="url" />
+    <input type="text" name="url" v-model="url1" />
   </div>
 </template>
 
 <script>
 export default {
   name: 'Api-item',
-  props: {
-    msg: String
+  data(){
+    return{
+        url1: "https://dev-games-backend.advbet.com/v1/ab-roulette/1",
+    }
+  },
+  beforeMount(){
+      this.$emit('getUrl', this.url1)
   }
 }
 </script>

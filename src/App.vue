@@ -3,10 +3,12 @@
     <div class="title">
       <h1>Aardvark Roulette Game</h1> 
     </div>
-    <Api />
+    <Api v-on:getUrl="getUrl" />
+    <input type="text" name="url" v-model="url" />
+    <h1>{{ url }}</h1>
     <Statistics :colspan="colspan" :stats="stats" :boardConfig="board" />
     <Spring-spinner
-      v-if="loadingStatus"
+      v-if="loading"
       class="spinner"
       :animation-duration="3000"
       :size="60"
@@ -40,7 +42,7 @@ export default {
     Events,
     Log,
     SpringSpinner,
-},
+  },
   data() {
     return {
       board: {},
@@ -51,74 +53,43 @@ export default {
       data: {},
       eventText: "",
       messages: [],
-      errored: "",
-      info: '',
-      url: "https://dev-games-backend.advbet.com/v1/ab-roulette/1"
+      // info: '',
+      loading: false,
+      url: '',
     };
   },
-  //   beforeMount() {
-  //   this.getBoard(this.url);
-  //   this.getData(this.url);
-  // },
+
   mounted () {
-    axios
-      .get(`${this.url}/configuration`)
-      .then(response => {
-        this.board = response.data;
-        this.info = response.data;
-        this.positions = response.data.positionToId;
-        this.numbers = response.data.results;
-        this.colspan = this.board.slots - 10;
-        // getStats(`${this.url}/stats?limit=200`);
-      })
-      .catch(error => {
-        console.log(error)
-        this.errored = true
-      })
-      // .finally(() => this.loading = false)
 
-    const getBoard = axios.get(`${this.url}/configuration`);
-    const getStats = axios.get(`${this.url}/stats?limit=200`);
-    const getData = axios.get(`${this.url}/nextGame`);
-
-
-    getBoard.then(response => {
-      console.log(response)
-    }).catch(error => {
-      console.err(error)
-    })
-
-    getStats.then(response => {
-      this.stats = response.data;
-      console.log(response)
-    }).catch(error => {
-      console.err(error)
-    })
-
-    getData.then(response => {
-      this.data = response.data;
-      this.wheelId = this.data.id;
-      this.remainingTime = this.data.fakeStartDelta;
-      this.eventText = `Game ${this.wheelId} will start in ${this.data.fakeStartDelta} sec`;
-      this.nextGame = true;
-      console.log(response)
-    }).catch(error => {
-      console.err(error)
-    })
-
-    // getResultData.then(response => {
-    //  this.result = response.data;
-    //   console.log(response)
-    // }).catch(error => {
-    //   console.err(error)
-    // });
-
+        console.log(this.url);
+    this.getBoardValue();
+    this.getDataValue()
 
     this.countDown = setInterval(() => {
       if (this.remainingTime === 0 && this.nextGame) {
         this.nextGame = false;
+        this.loading = true;
         this.eventText = `The wheel is spinning...`;
-        this.getResult(this.data.id);
+        setTimeout(() => {
+          console.log(`${this.url}/game/${this.data.id}`);
+          axios.get(`${this.url}/game/${this.data.id}`)
+            .then(response => {
+              this.result = response.data;
+            this.messages.push(
+              `Game ${this.data.id} ended, result is ${this.result.result}`
+            );
+            this.eventText = `result is ${this.result.result}`;
+            console.log(this.result.result);
+            this.loading = false;
+            setTimeout(() => {
+                this.getStatsValue();
+                this.getDataValue();
+            }, 2000);
+          }).catch(error => {
+            console.log(error)
+          });
+        }, 1000);
+
       } else if (this.remainingTime > 0 && this.nextGame) {
         this.wheelId = this.data.id;
         this.remainingTime = this.remainingTime - 1;
@@ -130,76 +101,74 @@ export default {
   },
 
   methods: {
-      getResult() {
-        const getResultData = axios.get(`${this.api}/game/${0}`);
-        getResultData.then(response => {
-        this.result = response.data;
-          console.log(response)
-        }).catch(error => {
-          console.err(error)
-        });
+    getUrl(url){
+      this.url = url;
+    },
+
+    getBoardValue(){
+      axios.get(`${this.url}/configuration`)
+      .then(response => {
+        this.board = response.data;
+        // this.info = response.data;
+        this.positions = response.data.positionToId;
+        this.numbers = response.data.results;
+        this.colspan = this.board.slots - 10;4
+        this.getStatsValue()
+        console.log(response)
+      }).catch(error => {
+        console.log(error)
+      })
+    },
+
+    getStatsValue(){
+      axios.get(`${this.url}/stats?limit=200`)
+      .then(response => {
+        this.stats = response.data;
+        console.log(response)
+      }).catch(error => {
+        console.log(error)
+      })
+    },
+
+    getResultValue(){
+
+    },
+
+    getDataValue(){
+      axios.get(`${this.url}/nextGame`)
+      .then(response => {
+        this.data = response.data;
+        this.wheelId = this.data.id;
+        this.remainingTime = this.data.fakeStartDelta;
+        this.eventText = `Game ${this.wheelId} will start in ${this.data.fakeStartDelta} sec`;
+        this.nextGame = true;
+        console.log(response)
+      }).catch(error => {
+        console.log(error)
+      })
+    },
+  },
+
+  computed: {
+    spinResult: {
+      set(result) {
+        this.$store.commit("SET_SPIN_RESULT", result);
       },
-
-
+      get() {
+        this.getStats(this.url);
+        return this.$store.state.spinResult;
+      },
+    },
+    displayText: {
+      set(text) {
+        this.$store.commit("SET_DISPLAY_TEXT", text);
+      },
+      get() {
+        return this.$store.state.displayText;
+      },
+    },
   }
   
-  // methods: {
-  //   async getBoard(api) {
-  //     // this.$store.commit("SET_DISPLAY_TEXT", "Loading game board");
-  //     let res = await fetch(`${api}/configuration`).then((res) => res.json());
-  //     console.log(res);
-  //     if (this.board === null) {
-  //       // this.$store.commit("SET_DISPLAY_TEXT", "Loading was unsuccessful");
-  //     }
-  //     this.board = res;
-  //     // this.$store.commit("SET_DISPLAY_TEXT", "GET ../configuration");
-  //     this.positions = res.positionToId;
-  //     this.numbers = res.results;
-  //     this.colspan = this.board.slots - 10;
-  //     this.getStats(api);
-  //   },
-
-  //   async getData(api) {
-  //     do {
-  //       let res = await fetch(`${api}/nextGame`).then((res) => res.json());
-  //       this.data = res;
-  //     } while (this.api === null);
-  //     // this.$store.commit("SET_DISPLAY_TEXT", "GET ../nextGame");
-  //     this.wheelId = this.data.id;
-  //     this.remainingTime = this.data.fakeStartDelta;
-  //     this.eventText = `Game ${this.wheelId} will start in ${this.data.fakeStartDelta} sec`;
-  //     this.nextGame = true;
-  //     this.sleepingTime();
-  //   },
-
-  //   async getStats(api) {
-  //     // this.$store.commit("SET_DISPLAY_TEXT", "GET .../stats?limit=200");
-  //     let stats = await fetch(`${api}/stats?limit=200`).then((stats) =>
-  //       stats.json()
-  //     );
-  //     this.stats = stats;
-  //   },
-
-  //   async getResult(instanceId, api) {
-  //     // this.$store.commit("SET_LOADING_STATUS", true);
-  //     // this.$store.commit("SET_DISPLAY_TEXT", "Spinning the wheel");
-  //     // this.$store.commit("SET_DISPLAY_TEXT", "GET .../game/" + instanceId);
-  //     do {
-  //       let res = await fetch(`${api}/game/${instanceId}`).then((res) =>
-  //         res.json()
-  //       );
-  //       this.result = res;
-  //     } while (this.result.result === null);
-  //     this.messages.push(
-  //       `Game ${instanceId} ended, result is ${this.result.result}`
-  //     );
-  //     // this.$store.commit("SET_SPIN_RESULT", this.result.result);
-  //     // this.$store.commit("SET_DISPLAY_TEXT", "result is " + this.result.result);
-  //     // this.$store.commit("SET_LOADING_STATUS", false);
-  //     this.getStats(this.url);
-  //     this.getData(api);
-  //   },
-  // },
 }
 </script>
 

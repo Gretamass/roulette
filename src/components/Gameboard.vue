@@ -29,6 +29,15 @@ export default {
       rez: null,
     };
   },
+
+  methods: {
+    colorResult(value) {
+      this.rez = value;
+      setTimeout(() => {
+        this.rez = null;
+      }, 1000);
+    },
+  },
 }
 </script>
 

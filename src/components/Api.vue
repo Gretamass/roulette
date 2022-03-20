@@ -1,7 +1,7 @@
 <template>
 <div class="api">
     <h3>API base URL</h3>
-    <input type="text" name="url" v-model="url1" />
+    <input type="text" name="url" v-model="url" @input="urlChanged"/>
   </div>
 </template>
 
@@ -10,11 +10,17 @@ export default {
   name: 'Api-item',
   data(){
     return{
-        url1: "https://dev-games-backend.advbet.com/v1/ab-roulette/1",
+        url: "https://dev-games-backend.advbet.com/v1/ab-roulette/1",
     }
   },
   beforeMount(){
-      this.$emit('getUrl', this.url1)
+    this.urlChanged();
+  },
+
+  methods:{
+    urlChanged(){
+      this.$emit('getUrl', this.url);
+    }
   }
 }
 </script>

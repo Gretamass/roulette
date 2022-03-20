@@ -2,7 +2,7 @@
   <div class="log">
     <h3>Log</h3>
     <div class="logs">
-      <div v-for="log in displayText" :key="log" class="logLine">
+      <div v-for="log in logText" :key="log" class="logLine">
         {{ log }}
       </div>
     </div>
@@ -12,9 +12,7 @@
 <script>
 export default {
   name: 'Log-item',
-  props: {
-    msg: String
-  }
+  props: ["logText"]
 }
 </script>
 

@@ -2,7 +2,6 @@
   <div class="events">
     <h3>Events</h3>
     <div class="events">
-        <p>{{ messages.length }}</p>
       <div v-for="message in messages" :key="message" class="messages">
         <p>{{ message }}</p>
       </div>

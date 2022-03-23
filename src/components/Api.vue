@@ -13,7 +13,7 @@ export default {
         url: "https://dev-games-backend.advbet.com/v1/ab-roulette/1",
     }
   },
-  beforeMount(){
+  mounted(){
     this.urlChanged();
   },
 

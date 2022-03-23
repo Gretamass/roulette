@@ -57,12 +57,13 @@ export default {
       url: '',
     };
   },
-
-  mounted () {
+  beforeMount(){
     this.logText.push(
         `Loading game board`
     );
+  },
 
+  mounted () {
     this.countDown = setInterval(() => {
       if (this.remainingTime === 0 && this.nextGame) {
         this.nextGame = false;
@@ -79,17 +80,26 @@ export default {
         this.eventText = `Game ${this.wheelId} will start in ${this.remainingTime} sec`;
       }
     }, 1000);
-
-
   },
 
   methods: {
     getUrl(url){
       this.url = url;
       this.messages = [];
-      this.getBoardValue();
-      this.getStatsValue();
-      this.getDataValue();
+      axios.get(`${this.url}/nextGame`)
+        .then(() => {
+          this.getBoardValue();
+          this.getStatsValue();
+          this.getDataValue();
+        })
+        .catch((error) => {
+          this.logText.push(
+            `${error}`
+          );
+          this.logText.push(
+            `Please correct the API base url`
+          );
+        });
       
     },
 
@@ -138,16 +148,19 @@ export default {
           axios.get(`${this.url}/game/${this.data.id}`)
             .then(response => {
               this.result = response.data.result;
-              this.messages.push(
-                `Game ${this.wheelId} ended, result is ${this.result}`
-              );
-              this.logText.push(
-                `result is ${this.result} `
-              );
-              this.$refs.Gameboard.colorResult(this.result);
-              this.loading = false;
-              this.getStatsValue();
-              this.getDataValue();
+              if(this.result !== null){
+                this.messages.push(
+                  `Game ${this.wheelId} ended, result is ${this.result}`
+                );
+                this.logText.push(
+                  `result is ${this.result} `
+                );
+                this.$refs.Gameboard.colorResult(this.result);
+                this.loading = false;
+                this.getStatsValue();
+                this.getDataValue();
+              } else this.getResultValue();
+       
           }).catch(() => {
             this.logText.push(
               `Error getting results, continue spinning`
@@ -168,11 +181,17 @@ export default {
         this.data = response.data;
         this.wheelId = this.data.id;
         this.remainingTime = this.data.fakeStartDelta;
-        this.eventText = `Game ${this.data.id} will start in ${this.data.fakeStartDelta} sec`;
-        this.nextGame = true;
-        this.logText.push(
-        `sleeping for fakeStartDelta ${this.data.fakeStartDelta} sec `
-        );
+        if(this.remainingTime > 0){
+          this.eventText = `Game ${this.data.id} will start in ${this.data.fakeStartDelta} sec`;
+          this.nextGame = true;
+          this.logText.push(
+            `sleeping for fakeStartDelta ${this.data.fakeStartDelta} sec `
+          );
+        } else {
+          setTimeout(() => {
+            this.getDataValue();
+          }, 2000);
+        }
       }).catch(() => {
         this.logText.push(
           `GET .../nextGame failed, trying again in 1000`

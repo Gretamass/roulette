@@ -31,6 +31,7 @@ import Log from '@/components/Log.vue';
 import { SpringSpinner } from "epic-spinners";
 import axios from 'axios';
 
+
 export default {
   name: 'App',
   components: {
@@ -83,54 +84,45 @@ export default {
   },
 
   methods: {
-    getUrl(url){
+    async getUrl(url){
       this.url = url;
       this.messages = [];
-      axios.get(`${this.url}/nextGame`)
-        .then(() => {
-          this.getBoardValue();
-          this.getStatsValue();
-          this.getDataValue();
-        })
-        .catch((error) => {
-          this.logText.push(
-            `${error}`
-          );
-          this.logText.push(
-            `Please correct the API base url`
-          );
-        });
-      
+
+      await this.getBoardValue();
+      await this.getStatsValue();
+      await this.getDataValue();
     },
 
-    getBoardValue(){
+    getBoardValue(){ 
       this.logText.push(
         `GET .../configuration`
       );
-      axios.get(`${this.url}/configuration`)
-      .then(response => {
-        this.board = response.data;
-        this.positions = response.data.positionToId;
-        this.numbers = response.data.results;
-        this.colspan = this.board.slots - 10;
-      }).catch(() => {
-        this.logText.push(
-          `GET .../configuration failed, trying again in 1000`
-        );
-        setTimeout(() => {
-          this.getBoardValue();
-        }, 1000);
-      })
+      return axios.get(`${this.url}/configuration`)
+        .then(response => {
+          this.board = response.data;
+          this.positions = response.data.positionToId;
+          this.numbers = response.data.results;
+          this.colspan = this.board.slots - 10;
+        })
+        .catch(() => {
+          this.logText.push(
+            `GET .../configuration failed, trying again in 1000`
+          );
+          setTimeout(() => {
+            this.getBoardValue();
+          }, 1000);
+        })
     },
 
     getStatsValue(){
       this.logText.push(
         `GET .../stats?limit=200`
       );
-      axios.get(`${this.url}/stats?limit=200`)
+      return axios.get(`${this.url}/stats?limit=200`)
       .then(response => {
         this.stats = response.data;
-      }).catch(() => {
+      })
+      .catch(() => {
         this.logText.push(
           `GET .../stats?limit=200 failed, trying again in 1000`
         );
@@ -157,11 +149,15 @@ export default {
                 );
                 this.$refs.Gameboard.colorResult(this.result);
                 this.loading = false;
-                this.getStatsValue();
-                this.getDataValue();
-              } else this.getResultValue();
-       
-          }).catch(() => {
+                this.getInfo();
+                
+              } else {
+                setTimeout(() => {
+                  this.getResultValue();
+                }, 1000);
+              }
+          })
+          .catch(() => {
             this.logText.push(
               `Error getting results, continue spinning`
             );
@@ -169,19 +165,24 @@ export default {
               this.getResultValue();
             }, 1000);
           });
-        }, 1000);
+        }, 2000);
+    },
+
+    async getInfo(){
+      await this.getStatsValue();
+      await this.getDataValue();
     },
 
     getDataValue(){
       this.logText.push(
         `GET .../nextGame `
       );
-      axios.get(`${this.url}/nextGame`)
+      return axios.get(`${this.url}/nextGame`)
       .then(response => {
         this.data = response.data;
         this.wheelId = this.data.id;
         this.remainingTime = this.data.fakeStartDelta;
-        if(this.remainingTime > 0){
+        if(this.remainingTime >= 0){
           this.eventText = `Game ${this.data.id} will start in ${this.data.fakeStartDelta} sec`;
           this.nextGame = true;
           this.logText.push(
@@ -192,7 +193,8 @@ export default {
             this.getDataValue();
           }, 2000);
         }
-      }).catch(() => {
+      })
+      .catch(() => {
         this.logText.push(
           `GET .../nextGame failed, trying again in 1000`
         );

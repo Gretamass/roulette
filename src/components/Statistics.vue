@@ -2,7 +2,7 @@
 <div class="statistics">
     <h3>Statistics (last 200 spins)</h3>
     <div class="stats">
-      <tbody class="statBoard">
+      <tbody v-if="stats" class="statBoard">
         <tr>
           <td></td>
           <th colspan="5" class="cold">Cold</th>

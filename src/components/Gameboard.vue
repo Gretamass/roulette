@@ -1,7 +1,7 @@
 <template>
 <div class="gameboard">
     <h3>Gameboard</h3>
-    <div class="board">
+    <div v-if="boardConfig" class="board">
       <div
         v-for="n in positionsConfig"
         :key="n"

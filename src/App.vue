@@ -44,14 +44,14 @@ export default {
   },
   data() {
     return {
-      board: {},
+      board: null,
       positions: [],
       remainingTime: null,
       colspan: null,
-      stats: [],
+      stats: null,
       data: {},
       logText: [],
-      eventText: "",
+      eventText: undefined,
       messages: [],
       result: null,
       loading: false,
@@ -60,7 +60,7 @@ export default {
   },
   beforeMount(){
     this.logText.push(
-        `Loading game board`
+        `${this.getTime()} Loading game board`
     );
   },
 
@@ -71,7 +71,7 @@ export default {
         this.loading = true;
         this.eventText = `The wheel is spinning...`;
         this.logText.push(
-          `Spinning the wheel `
+          `${this.getTime()} Spinning the wheel `
         );
         this.getResultValue();
 
@@ -95,7 +95,7 @@ export default {
 
     getBoardValue(){ 
       this.logText.push(
-        `GET .../configuration`
+        `${this.getTime()} GET .../configuration`
       );
       return axios.get(`${this.url}/configuration`)
         .then(response => {
@@ -103,10 +103,13 @@ export default {
           this.positions = response.data.positionToId;
           this.numbers = response.data.results;
           this.colspan = this.board.slots - 10;
+          this.logText.push(
+            `${this.getTime()} Checking for new game`
+          );
         })
         .catch(() => {
           this.logText.push(
-            `GET .../configuration failed, trying again in 1000`
+            `${this.getTime()} GET .../configuration failed, trying again in 1000`
           );
           setTimeout(() => {
             this.getBoardValue();
@@ -116,7 +119,7 @@ export default {
 
     getStatsValue(){
       this.logText.push(
-        `GET .../stats?limit=200`
+        `${this.getTime()} GET .../stats?limit=200`
       );
       return axios.get(`${this.url}/stats?limit=200`)
       .then(response => {
@@ -124,7 +127,7 @@ export default {
       })
       .catch(() => {
         this.logText.push(
-          `GET .../stats?limit=200 failed, trying again in 1000`
+          `${this.getTime()} GET .../stats?limit=200 failed, trying again in 1000`
         );
         setTimeout(() => {
           this.getStatsValue();
@@ -135,7 +138,7 @@ export default {
     getResultValue(){
       setTimeout(() => {
           this.logText.push(
-            `GET .../game/${this.data.id} `
+            `${this.getTime()} GET .../game/${this.data.id} `
           );
           axios.get(`${this.url}/game/${this.data.id}`)
             .then(response => {
@@ -145,7 +148,10 @@ export default {
                   `Game ${this.wheelId} ended, result is ${this.result}`
                 );
                 this.logText.push(
-                  `result is ${this.result} `
+                  `${this.getTime()} result is ${this.result} `
+                );
+                this.logText.push(
+                  `${this.getTime()} Stopped spinning the wheel `
                 );
                 this.$refs.Gameboard.colorResult(this.result);
                 this.loading = false;
@@ -159,7 +165,7 @@ export default {
           })
           .catch(() => {
             this.logText.push(
-              `Error getting results, continue spinning`
+              `${this.getTime()} Error getting results, continue spinning`
             );
             setTimeout(() => {
               this.getResultValue();
@@ -173,9 +179,13 @@ export default {
       await this.getDataValue();
     },
 
+    getTime() {
+      return new Date(new Date().getTime() - new Date().getTimezoneOffset() * 60000).toISOString();
+    },
+
     getDataValue(){
       this.logText.push(
-        `GET .../nextGame `
+        `${this.getTime()} GET .../nextGame `
       );
       return axios.get(`${this.url}/nextGame`)
       .then(response => {
@@ -186,7 +196,7 @@ export default {
           this.eventText = `Game ${this.data.id} will start in ${this.data.fakeStartDelta} sec`;
           this.nextGame = true;
           this.logText.push(
-            `sleeping for fakeStartDelta ${this.data.fakeStartDelta} sec `
+            `${this.getTime()} sleeping for fakeStartDelta ${this.data.fakeStartDelta} sec `
           );
         } else {
           setTimeout(() => {
@@ -196,7 +206,7 @@ export default {
       })
       .catch(() => {
         this.logText.push(
-          `GET .../nextGame failed, trying again in 1000`
+          `${this.getTime()} GET .../nextGame failed, trying again in 1000`
         );
         setTimeout(() => {
           this.getDataValue();
@@ -204,7 +214,6 @@ export default {
       })
     },
   },
-  
 }
 </script>
 
